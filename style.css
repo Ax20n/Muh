@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f3f3;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+.filters {
+    margin-bottom: 20px;
+}
+
+.filters button {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    background: #444;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.filters button:hover {
+    background: #222;
+}
+
+.menu {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.item {
+    background: white;
+    width: 250px;
+    margin: 10px;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>قائمة المطعم</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <h1>قائمة المطعم</h1>
+
+    <!-- مربع البحث -->
+    <input type="text" id="searchBox" placeholder="ابحث عن طبق..." onkeyup="searchItems()">
+
+    <!-- الفلاتر -->
+    <div class="filters">
+        <button class="active" onclick="filterMenu('all', this)">الكل</button>
+        <button onclick="filterMenu('breakfast', this)">فطور</button>
+        <button onclick="filterMenu('lunch', this)">غداء</button>
+        <button onclick="filterMenu('dinner', this)">عشاء</button>
+    </div>
+
+    <!-- عناصر القائمة -->
+    <div class="menu">
+
+        <div class="item breakfast" data-price="3">
+            <h3>بيض مع خبز</h3>
+            <p>وجبة فطور بسيطة.</p>
+            <p class="price">السعر: 3$</p>
+            <button onclick="addToOrder('بيض مع خبز', 3)">إضافة للطلب</button>
+        </div>
+
+        <div class="item breakfast" data-price="4">
+            <h3>بان كيك</h3>
+            <p>بان كيك مع عسل.</p>
+            <p class="price">السعر: 4$</p>
+            <button onclick="addToOrder('بان كيك', 4)">إضافة للطلب</button>
+        </div>
+
+        <div class="item lunch" data-price="7">
+            <h3>دجاج مشوي</h3>
+            <p>تقديم مع رز.</p>
+            <p class="price">السعر: 7$</p>
+            <button onclick="addToOrder('دجاج مشوي', 7)">إضافة للطلب</button>
+        </div>
+
+        <div class="item lunch" data-price="6">
+            <h3>باستا</h3>
+            <p>باستا بكريمة.</p>
+            <p class="price">السعر: 6$</p>
+            <button onclick="addToOrder('باستا', 6)">إضافة للطلب</button>
+        </div>
+
+        <div class="item dinner" data-price="5">
+            <h3>بيتزا</h3>
+            <p>بيتزا جبن.</p>
+            <p class="price">السعر: 5$</p>
+            <button onclick="addToOrder('بيتزا', 5)">إضافة للطلب</button>
+        </div>
+
+        <div class="item dinner" data-price="5">
+            <h3>برغر</h3>
+            <p>برغر لحم.</p>
+            <p class="price">السعر: 5$</p>
+            <button onclick="addToOrder('برغر', 5)">إضافة للطلب</button>
+        </div>
+
+    </div>
+
+    <hr>
+
+<!-- الطلب -->
+<h2>طلبك:</h2>
+<ul id="orderList"></ul>
+
+<h3>السعر الكلّي: <span id="totalPrice">0</span>$</h3>
+
+<script>
+    function filterMenu(category, button) {
+        let items = document.querySelectorAll(".item");
+
+        document.querySelectorAll(".filters button").forEach(btn => {
+            btn.classList.remove("active");
+        });
+        button.classList.add("active");
+
+        items.forEach(item => {
+            item.style.opacity = "0";
+
+            setTimeout(() => {
+                item.style.display = category === "all" || item.classList.contains(category)
+                    ? "block" : "none";
+
+                setTimeout(() => { item.style.opacity = "1"; }, 100);
+
+            }, 100);
+        });
+    }
+
+    function searchItems() {
+        let searchValue = document.getElementById("searchBox").value.toLowerCase();
+        let items = document.querySelectorAll(".item");
+
+        items.forEach(item => {
+            let text = item.innerText.toLowerCase();
+            item.style.display = text.includes(searchValue) ? "block" : "none";
+        });
+    }
+
+    let total = 0;
+
+    function addToOrder(name, price) {
+        let list = document.getElementById("orderList");
+
+        // create li
+        let li = document.createElement("li");
+        li.textContent = `${name} - ${price}$ `;
+        li.style.display = "flex";
+        li.style.justifyContent = "space-between";
+        li.style.alignItems = "center";
+
+        // create remove button
+        let removeBtn = document.createElement("button");
+        removeBtn.textContent = "إزالة";
+        removeBtn.style.marginRight = "10px";
+
+        removeBtn.onclick = function () {
+            list.removeChild(li);
+            total -= price;
+            document.getElementById("totalPrice").textContent = total;
+        };
+
+        li.appendChild(removeBtn);
+        list.appendChild(li);
+
+        total += price;
+        document.getElementById("totalPrice").textContent = total;
+    }
+
+    </script>
+
+</body>
+</html>
