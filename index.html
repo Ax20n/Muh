@@ -1,144 +1,159 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>قائمة المطعم</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hearts for Pets</title>
 
+<style>
+    * {
+        box-sizing: border-box;
+        touch-action: none;
+    }
+
+    body {
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+        background: linear-gradient(#bde0fe, #fff);
+    }
+
+    /* Scoreboard */
+    #score {
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 18px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        z-index: 10;
+    }
+
+    /* Animals */
+    .animal {
+        position: fixed;
+        bottom: 15px;
+        width: 120px;
+        height: 120px;
+        background: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 60px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    #cat {
+        left: 20px;
+    }
+
+    #dog {
+        right: 20px;
+    }
+
+    /* Heart */
+    .heart {
+        position: absolute;
+        font-size: 40px;
+        cursor: grab;
+        user-select: none;
+    }
+</style>
+</head>
 <body>
 
-    <h1>قائمة المطعم</h1>
+<div id="score">Score: 0</div>
 
-    <!-- مربع البحث -->
-    <input type="text" id="searchBox" placeholder="ابحث عن طبق..." onkeyup="searchItems()">
-
-    <!-- الفلاتر -->
-    <div class="filters">
-        <button class="active" onclick="filterMenu('all', this)">الكل</button>
-        <button onclick="filterMenu('breakfast', this)">فطور</button>
-        <button onclick="filterMenu('lunch', this)">غداء</button>
-        <button onclick="filterMenu('dinner', this)">عشاء</button>
-    </div>
-
-    <!-- عناصر القائمة -->
-    <div class="menu">
-
-        <div class="item breakfast" data-price="3">
-            <h3>بيض مع خبز</h3>
-            <p>وجبة فطور بسيطة.</p>
-            <p class="price">السعر: 3$</p>
-            <button onclick="addToOrder('بيض مع خبز', 3)">إضافة للطلب</button>
-        </div>
-
-        <div class="item breakfast" data-price="4">
-            <h3>بان كيك</h3>
-            <p>بان كيك مع عسل.</p>
-            <p class="price">السعر: 4$</p>
-            <button onclick="addToOrder('بان كيك', 4)">إضافة للطلب</button>
-        </div>
-
-        <div class="item lunch" data-price="7">
-            <h3>دجاج مشوي</h3>
-            <p>تقديم مع رز.</p>
-            <p class="price">السعر: 7$</p>
-            <button onclick="addToOrder('دجاج مشوي', 7)">إضافة للطلب</button>
-        </div>
-
-        <div class="item lunch" data-price="6">
-            <h3>باستا</h3>
-            <p>باستا بكريمة.</p>
-            <p class="price">السعر: 6$</p>
-            <button onclick="addToOrder('باستا', 6)">إضافة للطلب</button>
-        </div>
-
-        <div class="item dinner" data-price="5">
-            <h3>بيتزا</h3>
-            <p>بيتزا جبن.</p>
-            <p class="price">السعر: 5$</p>
-            <button onclick="addToOrder('بيتزا', 5)">إضافة للطلب</button>
-        </div>
-
-        <div class="item dinner" data-price="5">
-            <h3>برغر</h3>
-            <p>برغر لحم.</p>
-            <p class="price">السعر: 5$</p>
-            <button onclick="addToOrder('برغر', 5)">إضافة للطلب</button>
-        </div>
-
-    </div>
-
-    <hr>
-
-<!-- الطلب -->
-<h2>طلبك:</h2>
-<ul id="orderList"></ul>
-
-<h3>السعر الكلّي: <span id="totalPrice">0</span>$</h3>
+<div id="cat" class="animal">🐱</div>
+<div id="dog" class="animal">🐶</div>
 
 <script>
-    function filterMenu(category, button) {
-        let items = document.querySelectorAll(".item");
+let score = 0;
+const scoreEl = document.getElementById("score");
+const cat = document.getElementById("cat");
+const dog = document.getElementById("dog");
 
-        document.querySelectorAll(".filters button").forEach(btn => {
-            btn.classList.remove("active");
-        });
-        button.classList.add("active");
+function spawnHeart() {
+    const heart = document.createElement("div");
+    heart.className = "heart";
+    heart.textContent = "❤️";
 
-        items.forEach(item => {
-            item.style.opacity = "0";
+    heart.style.left = Math.random() * (window.innerWidth - 40) + "px";
+    heart.style.top = "-50px";
 
-            setTimeout(() => {
-                item.style.display = category === "all" || item.classList.contains(category)
-                    ? "block" : "none";
+    document.body.appendChild(heart);
 
-                setTimeout(() => { item.style.opacity = "1"; }, 100);
+    let falling = true;
+    let offsetX, offsetY;
 
-            }, 100);
-        });
+    function fall() {
+        if (!falling) return;
+        heart.style.top = heart.offsetTop + 2 + "px";
+        if (heart.offsetTop > window.innerHeight) {
+            heart.remove();
+            return;
+        }
+        requestAnimationFrame(fall);
+    }
+    fall();
+
+    function startDrag(e) {
+        falling = false;
+        const rect = heart.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("touchmove", drag);
+        document.addEventListener("mouseup", endDrag);
+        document.addEventListener("touchend", endDrag);
     }
 
-    function searchItems() {
-        let searchValue = document.getElementById("searchBox").value.toLowerCase();
-        let items = document.querySelectorAll(".item");
-
-        items.forEach(item => {
-            let text = item.innerText.toLowerCase();
-            item.style.display = text.includes(searchValue) ? "block" : "none";
-        });
+    function drag(e) {
+        const touch = e.touches ? e.touches[0] : e;
+        heart.style.left = touch.clientX - offsetX + "px";
+        heart.style.top = touch.clientY - offsetY + "px";
     }
 
-    let total = 0;
+    function endDrag() {
+        document.removeEventListener("mousemove", drag);
+        document.removeEventListener("touchmove", drag);
+        document.removeEventListener("mouseup", endDrag);
+        document.removeEventListener("touchend", endDrag);
 
-    function addToOrder(name, price) {
-        let list = document.getElementById("orderList");
-
-        // create li
-        let li = document.createElement("li");
-        li.textContent = `${name} - ${price}$ `;
-        li.style.display = "flex";
-        li.style.justifyContent = "space-between";
-        li.style.alignItems = "center";
-
-        // create remove button
-        let removeBtn = document.createElement("button");
-        removeBtn.textContent = "إزالة";
-        removeBtn.style.marginRight = "10px";
-
-        removeBtn.onclick = function () {
-            list.removeChild(li);
-            total -= price;
-            document.getElementById("totalPrice").textContent = total;
-        };
-
-        li.appendChild(removeBtn);
-        list.appendChild(li);
-
-        total += price;
-        document.getElementById("totalPrice").textContent = total;
+        if (isOverlapping(heart, cat) || isOverlapping(heart, dog)) {
+            score++;
+            scoreEl.textContent = "Score: " + score;
+            heart.remove();
+        } else {
+            falling = true;
+            fall();
+        }
     }
 
-    </script>
+    heart.addEventListener("mousedown", startDrag);
+    heart.addEventListener("touchstart", startDrag);
+}
+
+function isOverlapping(a, b) {
+    const r1 = a.getBoundingClientRect();
+    const r2 = b.getBoundingClientRect();
+    return !(
+        r1.right < r2.left ||
+        r1.left > r2.right ||
+        r1.bottom < r2.top ||
+        r1.top > r2.bottom
+    );
+}
+
+setInterval(spawnHeart, 1200);
+</script>
 
 </body>
 </html>
