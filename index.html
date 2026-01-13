@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Hearts & Treats</title>
+<title>Feed Zahura & sfsf</title>
 
 <style>
 * {
@@ -19,7 +19,7 @@ body {
     background: linear-gradient(#cdb4db, #fff);
 }
 
-/* Scoreboard */
+/* Score */
 #score {
     position: fixed;
     top: 10px;
@@ -37,15 +37,26 @@ body {
 .animal {
     position: fixed;
     bottom: 15px;
-    width: 130px;
-    height: 130px;
+    width: 140px;
+    height: 160px;
     background: white;
     border-radius: 25px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     font-size: 64px;
     box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+
+.name {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.hearts {
+    font-size: 18px;
+    margin-top: 4px;
 }
 
 #cat { left: 20px; }
@@ -59,7 +70,7 @@ body {
     user-select: none;
 }
 
-/* Heart explosion */
+/* Explosion */
 .particle {
     position: absolute;
     font-size: 20px;
@@ -68,14 +79,37 @@ body {
 }
 
 @keyframes pop {
-    from {
-        transform: translate(0,0) scale(1);
-        opacity: 1;
-    }
-    to {
-        transform: translate(var(--x), var(--y)) scale(0.5);
-        opacity: 0;
-    }
+    from { transform: translate(0,0); opacity: 1; }
+    to { transform: translate(var(--x), var(--y)); opacity: 0; }
+}
+
+/* Game Over */
+#gameOver {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#gameOverBox {
+    background: white;
+    padding: 30px;
+    border-radius: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+#gameOverBox button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    background: #ffafcc;
+    cursor: pointer;
 }
 </style>
 </head>
@@ -83,118 +117,210 @@ body {
 
 <div id="score">Score: 0</div>
 
-<div id="cat" class="animal">🐱</div>
-<div id="dog" class="animal">🐶</div>
+<div id="cat" class="animal">
+    <div class="name">Zahura</div>
+    🐱
+    <div class="hearts" id="catHearts"></div>
+</div>
+
+<div id="dog" class="animal">
+    <div class="name">sfsf</div>
+    🐶
+    <div class="hearts" id="dogHearts"></div>
+</div>
+
+<div id="gameOver">
+    <div id="gameOverBox">
+        <h1>Game Over 🪦</h1>
+        <p id="gameOverText"></p>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+</div>
 
 <script>
-let score = 0;
-const scoreEl = document.getElementById("score");
-const cat = document.getElementById("cat");
-const dog = document.getElementById("dog");
+let score, gameRunning, spawnTimer, hungerTimer;
 
-const items = ["❤️", "🍖", "🦴", "🥩"];
+const scoreEl = document.getElementById("score");
+const gameOverEl = document.getElementById("gameOver");
+const gameOverText = document.getElementById("gameOverText");
+
+const pets = {
+    cat: {
+        name: "Zahura",
+        el: document.getElementById("cat"),
+        heartsEl: document.getElementById("catHearts"),
+        hearts: 5,
+        allowed: ["🐟", "🍗"],
+        lastFed: Date.now()
+    },
+    dog: {
+        name: "sfsf",
+        el: document.getElementById("dog"),
+        heartsEl: document.getElementById("dogHearts"),
+        hearts: 5,
+        allowed: ["🍖", "🥩"],
+        lastFed: Date.now()
+    }
+};
+
+function updateHearts() {
+    pets.cat.heartsEl.textContent = "❤️".repeat(pets.cat.hearts);
+    pets.dog.heartsEl.textContent = "❤️".repeat(pets.dog.hearts);
+}
+
+const FOOD = ["🐟", "🍗", "🍖", "🥩"];
+const HEART = "❤️";
 
 function spawnItem() {
+    if (!gameRunning) return;
+
     const item = document.createElement("div");
     item.className = "item";
-    item.textContent = items[Math.floor(Math.random() * items.length)];
+    item.textContent = Math.random() < 0.18
+        ? HEART
+        : FOOD[Math.floor(Math.random() * FOOD.length)];
 
     item.style.left = Math.random() * (window.innerWidth - 40) + "px";
     item.style.top = "-50px";
-
     document.body.appendChild(item);
 
-    let falling = true;
-    let offsetX, offsetY;
+    let falling = true, ox, oy;
 
     function fall() {
-        if (!falling) return;
-        item.style.top = item.offsetTop + 2.5 + "px";
-        if (item.offsetTop > window.innerHeight) {
-            item.remove();
-            return;
-        }
-        requestAnimationFrame(fall);
+        if (!falling || !gameRunning) return;
+        item.style.top = item.offsetTop + 1.8 + "px"; // slower fall
+        if (item.offsetTop > window.innerHeight) item.remove();
+        else requestAnimationFrame(fall);
     }
     fall();
 
     function startDrag(e) {
         falling = false;
-        const rect = item.getBoundingClientRect();
-        const touch = e.touches ? e.touches[0] : e;
-        offsetX = touch.clientX - rect.left;
-        offsetY = touch.clientY - rect.top;
+        const t = e.touches ? e.touches[0] : e;
+        const r = item.getBoundingClientRect();
+        ox = t.clientX - r.left;
+        oy = t.clientY - r.top;
 
         document.addEventListener("mousemove", drag);
         document.addEventListener("touchmove", drag);
-        document.addEventListener("mouseup", endDrag);
-        document.addEventListener("touchend", endDrag);
+        document.addEventListener("mouseup", end);
+        document.addEventListener("touchend", end);
     }
 
     function drag(e) {
-        const touch = e.touches ? e.touches[0] : e;
-        item.style.left = touch.clientX - offsetX + "px";
-        item.style.top = touch.clientY - offsetY + "px";
+        const t = e.touches ? e.touches[0] : e;
+        item.style.left = t.clientX - ox + "px";
+        item.style.top = t.clientY - oy + "px";
     }
 
-    function endDrag() {
+    function end() {
         document.removeEventListener("mousemove", drag);
         document.removeEventListener("touchmove", drag);
-        document.removeEventListener("mouseup", endDrag);
-        document.removeEventListener("touchend", endDrag);
-
-        if (isOverlapping(item, cat)) {
-            feed(cat);
-            item.remove();
-        } else if (isOverlapping(item, dog)) {
-            feed(dog);
-            item.remove();
-        } else {
-            falling = true;
-            fall();
-        }
+        document.removeEventListener("mouseup", end);
+        document.removeEventListener("touchend", end);
+        handleDrop(item);
     }
 
     item.addEventListener("mousedown", startDrag);
     item.addEventListener("touchstart", startDrag);
 }
 
-function feed(animal) {
-    score++;
-    scoreEl.textContent = "Score: " + score;
-    explodeHearts(animal);
+function handleDrop(item) {
+    for (const key in pets) {
+        const pet = pets[key];
+        if (overlap(item, pet.el)) {
+            feed(pet, item.textContent);
+            item.remove();
+            return;
+        }
+    }
 }
 
-function explodeHearts(target) {
-    const rect = target.getBoundingClientRect();
+function feed(pet, item) {
+    if (!gameRunning) return;
+
+    pet.lastFed = Date.now();
+
+    if (item === HEART) {
+        pet.hearts = Math.min(5, pet.hearts + 1);
+    } else if (pet.allowed.includes(item)) {
+        score++;
+        explode(pet.el);
+    } else {
+        pet.hearts--;
+    }
+
+    updateHearts();
+    scoreEl.textContent = "Score: " + score;
+    checkGameOver(pet);
+}
+
+function explode(target) {
+    const r = target.getBoundingClientRect();
     for (let i = 0; i < 8; i++) {
         const p = document.createElement("div");
         p.className = "particle";
         p.textContent = "❤️";
-
-        p.style.left = rect.left + rect.width / 2 + "px";
-        p.style.top = rect.top + rect.height / 2 + "px";
-
-        p.style.setProperty("--x", (Math.random() * 120 - 60) + "px");
-        p.style.setProperty("--y", (Math.random() * -120) + "px");
-
+        p.style.left = r.left + r.width / 2 + "px";
+        p.style.top = r.top + r.height / 2 + "px";
+        p.style.setProperty("--x", (Math.random()*120-60)+"px");
+        p.style.setProperty("--y", (Math.random()*-120)+"px");
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 700);
     }
 }
 
-function isOverlapping(a, b) {
-    const r1 = a.getBoundingClientRect();
-    const r2 = b.getBoundingClientRect();
-    return !(
-        r1.right < r2.left ||
-        r1.left > r2.right ||
-        r1.bottom < r2.top ||
-        r1.top > r2.bottom
-    );
+function checkGameOver(pet) {
+    if (pet.hearts <= 0) {
+        gameRunning = false;
+        clearInterval(spawnTimer);
+        clearInterval(hungerTimer);
+        gameOverText.textContent = `${pet.name} has died 🪦`;
+        gameOverEl.style.display = "flex";
+    }
 }
 
-setInterval(spawnItem, 900);
+function overlap(a, b) {
+    const r1 = a.getBoundingClientRect();
+    const r2 = b.getBoundingClientRect();
+    return !(r1.right < r2.left || r1.left > r2.right ||
+             r1.bottom < r2.top || r1.top > r2.bottom);
+}
+
+function startGame() {
+    score = 0;
+    gameRunning = true;
+    gameOverEl.style.display = "none";
+
+    for (const key in pets) {
+        pets[key].hearts = 5;
+        pets[key].lastFed = Date.now();
+    }
+
+    updateHearts();
+    scoreEl.textContent = "Score: 0";
+
+    spawnTimer = setInterval(spawnItem, 900);
+    hungerTimer = setInterval(() => {
+        const now = Date.now();
+        for (const key in pets) {
+            const pet = pets[key];
+            if (now - pet.lastFed > 3500) {
+                pet.hearts--;
+                pet.lastFed = now;
+                updateHearts();
+                checkGameOver(pet);
+            }
+        }
+    }, 500);
+}
+
+function restartGame() {
+    document.querySelectorAll(".item").forEach(e => e.remove());
+    startGame();
+}
+
+startGame();
 </script>
 
 </body>
